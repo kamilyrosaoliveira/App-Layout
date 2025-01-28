@@ -1,0 +1,157 @@
+import 'package:flutter/material.dart';
+import 'dart:math';
+
+void main() {
+  runApp(JogoDaVelhaApp());
+}
+
+class JogoDaVelhaApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Jogo da Velha',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: JogoDaVelhaPage(),
+    );
+  }
+}
+
+class JogoDaVelhaPage extends StatefulWidget {
+  @override
+  _JogoDaVelhaPageState createState() => _JogoDaVelhaPageState();
+}
+
+class _JogoDaVelhaPageState extends State<JogoDaVelhaPage> {
+  List<String> board = List.filled(9, '', growable: false);
+  String currentPlayer = 'X';
+  bool isSinglePlayer = true;
+  Random random = Random();
+
+  void resetGame() {
+    setState(() {
+      board = List.filled(9, '', growable: false);
+      currentPlayer = 'X';
+    });
+  }
+
+  void makeMove(int index) {
+    if (board[index].isEmpty) {
+      setState(() {
+        board[index] = currentPlayer;
+        if (checkWinner(currentPlayer)) {
+          showEndDialog('$currentPlayer venceu!');
+        } else if (!board.contains('')) {
+          showEndDialog('Empate!');
+        } else {
+          currentPlayer = currentPlayer == 'X' ? 'O' : 'X';
+          if (isSinglePlayer && currentPlayer == 'O') {
+            computerMove();
+          }
+        }
+      });
+    }
+  }
+
+  void computerMove() {
+    int index;
+    do {
+      index = random.nextInt(9);
+    } while (board[index].isNotEmpty);
+    makeMove(index);
+  }
+
+  bool checkWinner(String player) {
+    List<List<int>> winningPositions = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6],
+    ];
+
+    for (var positions in winningPositions) {
+      if (positions.every((index) => board[index] == player)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void showEndDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              resetGame();
+              Navigator.of(context).pop();
+            },
+            child: Text('Reiniciar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Jogo da Velha'),
+        actions: [
+          Switch(
+            value: isSinglePlayer,
+            onChanged: (value) {
+              setState(() {
+                isSinglePlayer = value;
+                resetGame();
+              });
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Center(
+              child: Text(isSinglePlayer ? '1 Jogador' : '2 Jogadores'),
+            ),
+          ),
+        ],
+      ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          GridView.builder(
+            shrinkWrap: true,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              mainAxisSpacing: 8.0,
+              crossAxisSpacing: 8.0,
+            ),
+            itemCount: 9,
+            itemBuilder: (context, index) => GestureDetector(
+              onTap: () => makeMove(index),
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.black),
+                ),
+                child: Center(
+                  child: Text(
+                    board[index],
+                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
